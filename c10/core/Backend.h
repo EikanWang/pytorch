@@ -25,12 +25,14 @@ namespace c10 {
  * or "SparseCUDA"; backend in torch.backends is something like "MKL" or
  * "CUDNN".
  */
-enum class Backend { CPU, CUDA, HIP, SparseCPU, SparseCUDA, SparseHIP, MSNPU, XLA, QuantizedCPU, ComplexCPU, ComplexCUDA, Undefined, MkldnnCPU, NumOptions };
+enum class Backend { CPU, CUDA, HIP, SparseCPU, SparseCUDA, SparseHIP, MSNPU, XLA, QuantizedCPU, ComplexCPU, ComplexCUDA, Undefined, MkldnnCPU, DPCPP, SparseDPCPP, ComplexDPCPP, NumOptions };
 
 static inline Backend toSparse(Backend b) {
   switch (b) {
     case Backend::CPU:
       return Backend::SparseCPU;
+    case Backend::DPCPP:
+      return Backend::SparseDPCPP;
     case Backend::CUDA:
       return Backend::SparseCUDA;
     case Backend::HIP:
@@ -58,6 +60,10 @@ static inline Backend toDense(Backend b) {
       return Backend::MSNPU;
     case Backend::XLA:
       return Backend::XLA;
+    case Backend::DPCPP:
+      return Backend::DPCPP;
+    case Backend::SparseDPCPP:
+      return Backend::DPCPP;
     case Backend::SparseCPU:
       return Backend::CPU;
     case Backend::SparseCUDA:
@@ -86,6 +92,10 @@ static inline Backend tensorTypeIdToBackend(TensorTypeId t) {
     return Backend::MSNPU;
   } else if (t == TensorTypeId::XLATensorId) {
     return Backend::XLA;
+  } else if (t == TensorTypeId::DPCPPTensorId) {
+    return Backend::DPCPP;
+  } else if (t == TensorTypeId::SparseDPCPPTensorId) {
+    return Backend::SparseDPCPP;
   } else if (t == TensorTypeId::SparseCPUTensorId) {
     return Backend::SparseCPU;
   } else if (t == TensorTypeId::SparseCUDATensorId) {
@@ -119,6 +129,10 @@ static inline TensorTypeId backendToTensorTypeId(Backend b) {
       return TensorTypeId::MSNPUTensorId;
     case Backend::XLA:
       return TensorTypeId::XLATensorId;
+    case Backend::DPCPP:
+      return TensorTypeId::DPCPPTensorId;
+    case Backend::SparseDPCPP:
+      return TensorTypeId::SparseDPCPPTensorId;
     case Backend::SparseCPU:
       return TensorTypeId::SparseCPUTensorId;
     case Backend::SparseCUDA:
@@ -158,6 +172,9 @@ static inline DeviceType backendToDeviceType(Backend b) {
       return DeviceType::CUDA;
     case Backend::SparseHIP:
       return DeviceType::HIP;
+    case Backend::SparseDPCPP:
+    case Backend::DPCPP:
+      return DeviceType::DPCPP;
     case Backend::MkldnnCPU:
     case Backend::QuantizedCPU:
     case Backend::ComplexCPU:
@@ -173,12 +190,14 @@ static inline DeviceType backendToDeviceType(Backend b) {
 
 static inline Backend backendToCPU(Backend b) {
   switch (b) {
+    case Backend::DPCPP:
     case Backend::CPU:
       return Backend::CPU;
     case Backend::CUDA:
       return Backend::CPU;
     case Backend::HIP:
       return Backend::CPU;
+    case Backend::SparseDPCPP:
     case Backend::SparseCPU:
       return Backend::SparseCPU;
     case Backend::SparseCUDA:
@@ -192,6 +211,7 @@ static inline Backend backendToCPU(Backend b) {
       return Backend::MkldnnCPU;
     case Backend::QuantizedCPU:
       return Backend::QuantizedCPU;
+    case Backend::ComplexDPCPP:
     case Backend::ComplexCPU:
     case Backend::ComplexCUDA:
       return Backend::ComplexCPU;
@@ -204,16 +224,19 @@ static inline Backend backendToCPU(Backend b) {
 
 static inline Backend backendToCUDA(Backend b) {
   switch (b) {
+    case Backend::DPCPP:
     case Backend::CPU:
     case Backend::CUDA:
     case Backend::HIP:
     case Backend::MSNPU:
     case Backend::XLA:
       return Backend::CUDA;
+    case Backend::SparseDPCPP:
     case Backend::SparseCPU:
     case Backend::SparseCUDA:
     case Backend::SparseHIP:
       return Backend::SparseCUDA;
+    case Backend::ComplexDPCPP:
     case Backend::ComplexCPU:
     case Backend::ComplexCUDA:
       return Backend::ComplexCUDA;
@@ -226,12 +249,14 @@ static inline Backend backendToCUDA(Backend b) {
 
 static inline Backend backendToHIP(Backend b) {
   switch (b) {
+    case Backend::DPCPP:
     case Backend::CPU:
     case Backend::CUDA:
     case Backend::HIP:
     case Backend::MSNPU:
     case Backend::XLA:
       return Backend::HIP;
+    case Backend::SparseDPCPP:
     case Backend::SparseCPU:
     case Backend::SparseCUDA:
     case Backend::SparseHIP:
@@ -246,6 +271,8 @@ static inline Backend backendToHIP(Backend b) {
 // TODO: This probably shouldn't actually be static inline
 static inline const char* toString(Backend b) {
   switch (b) {
+    case Backend::DPCPP:
+      return "DPCPP";
     case Backend::CPU:
       return "CPU";
     case Backend::CUDA:
@@ -256,6 +283,8 @@ static inline const char* toString(Backend b) {
       return "MSNPU";
     case Backend::XLA:
       return "XLA";
+    case Backend::SparseDPCPP:
+      return "SparseDPCPP";
     case Backend::SparseCPU:
       return "SparseCPU";
     case Backend::SparseCUDA:
@@ -266,6 +295,8 @@ static inline const char* toString(Backend b) {
       return "MkldnnCPU";
     case Backend::QuantizedCPU:
       return "QuantizedCPU";
+    case Backend::ComplexDPCPP:
+      return "ComplexDPCPP";
     case Backend::ComplexCPU:
       return "ComplexCPU";
     case Backend::ComplexCUDA:
@@ -277,6 +308,7 @@ static inline const char* toString(Backend b) {
 
 static inline bool isSparse(Backend b) {
   switch (b) {
+    case Backend::SparseDPCPP:
     case Backend::SparseCPU:
     case Backend::SparseCUDA:
     case Backend::SparseHIP:
