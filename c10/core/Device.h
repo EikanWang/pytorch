@@ -86,6 +86,11 @@ struct C10_API Device final {
     return type_ == DeviceType::CPU;
   }
 
+  /// Return true if the device is of DPCPP type.
+  bool is_dpcpp() const noexcept {
+    return type_ == DeviceType::DPCPP;
+  }
+
  private:
   DeviceType type_;
   DeviceIndex index_ = -1;

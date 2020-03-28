@@ -424,6 +424,7 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
   bool is_sparse() const {
     // NB: This method is not virtual and avoid dispatches for performance reasons.
     return type_set_.has(TensorTypeId::SparseCPUTensorId) ||
+           type_set_.has(TensorTypeId::SparseDPCPPTensorId) ||
            type_set_.has(TensorTypeId::SparseCUDATensorId) ||
            type_set_.has(TensorTypeId::SparseHIPTensorId);
   }
@@ -431,6 +432,11 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
   bool is_quantized() const {
     // NB: This method is not virtual and avoid dispatches for performance reasons.
     return type_set_.has(TensorTypeId::QuantizedCPUTensorId);
+  }
+
+  bool is_dpcpp() const {
+    return type_set_.has(TensorTypeId::DPCPPTensorId) ||
+           type_set_.has(TensorTypeId::SparseDPCPPTensorId);
   }
 
   bool is_cuda() const {
@@ -913,11 +919,13 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
   inline bool has_compatible_shallow_copy_type(TensorTypeSet from) {
     auto is_dense = [](TensorTypeSet ts) {
       return ts.has(TensorTypeId::CPUTensorId) ||
+             ts.has(TensorTypeId::DPCPPTensorId) ||
              ts.has(TensorTypeId::CUDATensorId) ||
              ts.has(TensorTypeId::HIPTensorId);
     };
     auto is_sparse = [](TensorTypeSet ts) {
       return ts.has(TensorTypeId::SparseCPUTensorId) ||
+             ts.has(TensorTypeId::SparseDPCPPTensorId) ||
              ts.has(TensorTypeId::SparseCUDATensorId) ||
              ts.has(TensorTypeId::SparseHIPTensorId);
     };

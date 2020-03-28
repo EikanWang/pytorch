@@ -39,6 +39,8 @@ static inline Backend toSparse(Backend b) {
       return Backend::SparseHIP;
     case Backend::SparseCPU:
       return Backend::SparseCPU;
+    case Backend::SparseDPCPP:
+      return Backend::SparseDPCPP;
     case Backend::SparseCUDA:
       return Backend::SparseCUDA;
     case Backend::SparseHIP:

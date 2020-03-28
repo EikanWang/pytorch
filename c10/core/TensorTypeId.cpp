@@ -42,6 +42,8 @@ const char* toString(TensorTypeId t) {
       return "VariableTensorId";
     case TensorTypeId::DPCPPTensorId:
       return "DPCPPTensorId";
+    case TensorTypeId::SparseDPCPPTensorId:
+      return "SparseDPCPPTensorId";
     case TensorTypeId::TESTING_ONLY_GenericModeTensorId:
       return "TESTING_ONLY_GenericModeTensorId";
     case TensorTypeId::TESTING_ONLY_GenericWrapperTensorId:
