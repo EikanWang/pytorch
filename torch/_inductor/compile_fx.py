@@ -24,6 +24,7 @@ from ..fx.graph import _PyTreeCodeGen
 from . import config, metrics, overrides, pattern_matcher
 from .debug import DebugContext
 from .decomposition import select_decomp_table
+from .triton_backend import get_triton_backend, all_triton_backend_name
 from .graph import GraphLowering
 from .mkldnn import convert_outplace_to_inplace
 from .utils import developer_warning, get_dtype_size, has_incompatible_cudagraph_ops
@@ -240,18 +241,25 @@ def clone_preserve_strides(x):
 
 
 def align_inputs(model, inputs, static_input_idxs=()):
-    def is_aligned(storage_offset, dtype):
-        return (storage_offset * get_dtype_size(dtype)) % ALIGNMENT == 0
+    def is_aligned(storage_offset, dtype, device_type):
+        triton_backend = get_triton_backend(device_type=device_type)
+        assert triton_backend
+        return (
+            storage_offset * get_dtype_size(dtype)
+        ) % triton_backend.mem_alignment() == 0
 
+    _all_triton_backend_name = all_triton_backend_name()
     check_inputs = [
         i
         for i in range(len(inputs))
         if isinstance(inputs[i], torch.Tensor)
         and (
             i not in static_input_idxs
-            or not is_aligned(inputs[i].storage_offset(), inputs[i].dtype)
+            or not is_aligned(
+                inputs[i].storage_offset(), inputs[i].dtype, inputs[i].device.type
+            )
         )
-        and inputs[i].device.type == "cuda"
+        and inputs[i].device.type in _all_triton_backend_name
     ]
 
     if len(check_inputs) == 0:
@@ -259,7 +267,11 @@ def align_inputs(model, inputs, static_input_idxs=()):
 
     def run(new_inputs):
         for i in check_inputs:
-            if new_inputs[i].data_ptr() % ALIGNMENT:
+            triton_backend = get_triton_backend(
+                device_type=new_inputs[i].device.type
+            )
+            assert triton_backend
+            if new_inputs[i].data_ptr() % triton_backend.mem_alignment():
                 new_inputs[i] = clone_preserve_strides(new_inputs[i])
         return model(new_inputs)
 
